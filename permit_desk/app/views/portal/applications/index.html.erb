@@ -1,0 +1,36 @@
+<% content_for :title, 'My applications - Mountport Permit Portal' %>
+
+<div class="page-head">
+  <h1>My applications</h1>
+  <%= link_to 'Start an application', portal_new_application_path, class: 'primary button' %>
+</div>
+
+<% if @applications.empty? %>
+  <p class="card">You have not started a permit application yet.</p>
+<% else %>
+  <table class="listing">
+    <caption class="visually-hidden">Permit applications belonging to your account</caption>
+    <thead>
+      <tr>
+        <th scope="col">Reference</th>
+        <th scope="col">Address</th>
+        <th scope="col">Work</th>
+        <th scope="col">Status</th>
+        <th scope="col">Started</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @applications.each do |application| %>
+        <tr>
+          <th scope="row">
+            <%= link_to application.reference, portal_application_path(application.reference) %>
+          </th>
+          <td><%= application.parcel&.address || 'Not matched' %></td>
+          <td><%= application.work_type.humanize %></td>
+          <td><%= render 'shared/status', state: application.state %></td>
+          <td><%= application.created_at.to_date.strftime('%-d %B %Y') %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

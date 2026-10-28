@@ -1,0 +1,60 @@
+<% content_for :title, "Inspections for #{@application.reference} - Mountport Permit Portal" %>
+
+<h1>Book an inspection</h1>
+<p class="muted">Permit <%= @application.permit_number %>, <%= @application.parcel&.address %>.</p>
+
+<% if @notice %>
+  <p class="flash flash-notice" role="status"><%= @notice %></p>
+<% end %>
+
+<%= form_with url: portal_inspections_path(@application.reference), method: :get, class: 'inline-form' do %>
+  <div class="field">
+    <label for="inspection_type">Inspection type</label>
+    <select id="inspection_type" name="inspection_type">
+      <% Portal::InspectionsController::TYPES.each do |type| %>
+        <option value="<%= type %>" <%= 'selected' if @inspection_type == type %>><%= type.humanize %></option>
+      <% end %>
+    </select>
+  </div>
+  <button type="submit" class="secondary">Show slots</button>
+<% end %>
+
+<% if @slots.empty? %>
+  <p class="card">No slots are open for that inspection type right now.</p>
+<% else %>
+  <ul class="slots">
+    <% @slots.each do |slot| %>
+      <li>
+        <%= form_with url: portal_inspections_path(@application.reference), method: :post do %>
+          <input type="hidden" name="slot_id" value="<%= slot['id'] %>">
+          <input type="hidden" name="inspection_type" value="<%= @inspection_type %>">
+          <button type="submit" class="slot">
+            <span class="slot-date">
+              <%= Time.zone.parse(slot['starts_at']).strftime('%A %-d %B') %>
+            </span>
+            <span class="slot-time">
+              <%= Time.zone.parse(slot['starts_at']).strftime('%l:%M %p') %>
+            </span>
+            <span class="visually-hidden">Book this slot</span>
+          </button>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @bookings.any? %>
+  <div class="card">
+    <h2>Booked</h2>
+    <ul>
+      <% @bookings.each do |booking| %>
+        <li>
+          <%= booking.inspection_type.humanize %> on
+          <time datetime="<%= booking.scheduled_for&.iso8601 %>">
+            <%= booking.scheduled_for&.strftime('%-d %B %Y at %l:%M %p') %>
+          </time>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

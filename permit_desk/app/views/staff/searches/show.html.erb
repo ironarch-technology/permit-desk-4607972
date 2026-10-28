@@ -1,0 +1,74 @@
+<% content_for :title, 'Search applications - Mountport Permit Portal' %>
+
+<h1>Search applications</h1>
+
+<%= form_with url: staff_search_path, method: :get, class: 'card form search-form' do %>
+  <div class="field">
+    <label for="parcel">Parcel address</label>
+    <input type="text" id="parcel" name="parcel" value="<%= params[:parcel] %>">
+  </div>
+
+  <div class="field">
+    <label for="applicant">Applicant name</label>
+    <input type="text" id="applicant" name="applicant" value="<%= params[:applicant] %>">
+  </div>
+
+  <div class="field">
+    <label for="state">State</label>
+    <select id="state" name="state">
+      <option value="">Any</option>
+      <% PermitApplication::STATES.each do |state| %>
+        <option value="<%= state %>" <%= 'selected' if params[:state] == state %>><%= state.humanize %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="from">From</label>
+    <input type="date" id="from" name="from" value="<%= params[:from] %>">
+  </div>
+
+  <div class="field">
+    <label for="to">To</label>
+    <input type="date" id="to" name="to" value="<%= params[:to] %>">
+  </div>
+
+  <button type="submit" class="primary">Search</button>
+<% end %>
+
+<p role="status"><%= @total %> matching <%= 'application'.pluralize(@total) %>.</p>
+
+<table class="listing">
+  <caption class="visually-hidden">Search results</caption>
+  <thead>
+    <tr>
+      <th scope="col">Reference</th>
+      <th scope="col">Applicant</th>
+      <th scope="col">Address</th>
+      <th scope="col">State</th>
+      <th scope="col">Started</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @results.each do |application| %>
+      <tr>
+        <th scope="row"><%= application.reference %></th>
+        <td><%= application.applicant_name %></td>
+        <td><%= application.parcel&.address %></td>
+        <td><%= render 'shared/status', state: application.state %></td>
+        <td><%= application.created_at.to_date.strftime('%-d %b %Y') %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @total > Staff::SearchesController::PER_PAGE %>
+  <nav class="pagination" aria-label="Search results pages">
+    <% if @page > 1 %>
+      <%= link_to 'Previous', staff_search_path(request.query_parameters.merge(page: @page - 1)) %>
+    <% end %>
+    <% if @page * Staff::SearchesController::PER_PAGE < @total %>
+      <%= link_to 'Next', staff_search_path(request.query_parameters.merge(page: @page + 1)) %>
+    <% end %>
+  </nav>
+<% end %>

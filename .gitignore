@@ -1,0 +1,9 @@
+*.log
+tmp/
+.DS_Store
+permit_desk/log/*
+permit_desk/tmp/*
+!permit_desk/log/.keep
+!permit_desk/tmp/.keep
+node_modules/
+.env

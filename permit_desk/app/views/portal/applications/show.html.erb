@@ -1,0 +1,115 @@
+<% content_for :title, "#{@application.reference} - Mountport Permit Portal" %>
+
+<div class="page-head">
+  <div>
+    <h1><%= @application.reference %></h1>
+    <p class="muted"><%= @application.parcel&.address || 'Address not matched' %></p>
+  </div>
+  <%= render 'shared/status', state: @application.state %>
+</div>
+
+<div class="card">
+  <h2>Application</h2>
+  <dl class="detail">
+    <dt>Type of work</dt><dd><%= @application.work_type.humanize %></dd>
+    <dt>Scope</dt><dd><%= @application.scope_narrative %></dd>
+    <dt>Declared value</dt><dd>$<%= number_with_delimiter(@application.valuation_cents / 100) %></dd>
+    <% if @application.contractor? %>
+      <dt>Contractor licence</dt><dd><%= @application.contractor_licence %></dd>
+    <% end %>
+    <% if @application.permit_number %>
+      <dt>Permit number</dt><dd><%= @application.permit_number %></dd>
+      <dt>Valid until</dt><dd><%= @application.valid_until&.to_date&.strftime('%-d %B %Y') %></dd>
+    <% end %>
+  </dl>
+
+  <% if @application.state == 'draft' %>
+    <%= button_to 'Submit this application', portal_submit_application_path(@application.reference),
+                  method: :post, class: 'primary' %>
+  <% end %>
+
+  <% if @application.state == 'corrections_required' %>
+    <p><%= link_to 'Respond to the corrections', portal_corrections_path(@application.reference), class: 'primary button' %></p>
+  <% end %>
+
+  <% if @application.state == 'issued' %>
+    <p><%= link_to 'Book an inspection', portal_inspections_path(@application.reference), class: 'primary button' %></p>
+  <% end %>
+
+  <% unless @application.terminal? %>
+    <button type="button" class="secondary" data-open-withdraw>Withdraw this application</button>
+  <% end %>
+</div>
+
+<% if @quote && %w[fees_assessed].include?(@application.state) %>
+  <div class="card" id="fees">
+    <h2>Fees due</h2>
+    <table class="listing">
+      <caption class="visually-hidden">Fee breakdown for <%= @application.reference %></caption>
+      <thead>
+        <tr><th scope="col">Item</th><th scope="col">Amount</th></tr>
+      </thead>
+      <tbody>
+        <% @quote.breakdown.each do |label, cents| %>
+          <tr>
+            <th scope="row"><%= label.to_s.humanize %></th>
+            <td>$<%= number_with_delimiter(cents.to_i / 100) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row">Total</th>
+          <td>$<%= number_with_delimiter(@quote.total_cents / 100) %></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p class="muted">This quote expires <%= @quote.expires_at.strftime('%-d %B %Y at %l:%M %p') %>.</p>
+
+    <button type="button" class="primary" id="pay-now"
+            data-reference="<%= @application.reference %>"
+            data-quote-reference="<%= @quote.quote_reference %>"
+            data-amount-cents="<%= @quote.total_cents %>">
+      Pay $<%= number_with_delimiter(@quote.total_cents / 100) %> now
+    </button>
+    <p id="pay-status" role="status"></p>
+  </div>
+<% end %>
+
+<div class="card">
+  <h2>What has happened so far</h2>
+  <ol class="timeline">
+    <% @transitions.each do |transition| %>
+      <li>
+        <p class="timeline-state"><%= render 'shared/status', state: transition.to_state %></p>
+        <p class="timeline-when">
+          <time datetime="<%= transition.created_at.iso8601 %>">
+            <%= transition.created_at.strftime('%-d %B %Y at %l:%M %p') %>
+          </time>
+        </p>
+        <p class="timeline-who">
+          Recorded by <%= transition.actor %><%= " via #{transition.source_system}" if transition.source_system %>.
+          <%= transition.reason %>
+        </p>
+      </li>
+    <% end %>
+  </ol>
+</div>
+
+<dialog id="withdraw-dialog">
+  <form method="dialog">
+    <h2>Withdraw <%= @application.reference %>?</h2>
+    <p>The city stops work on it. You cannot undo this, but you can start a new application.</p>
+    <button type="submit" value="cancel" class="secondary">Keep it open</button>
+  </form>
+  <%= form_with url: portal_withdraw_application_path(@application.reference), method: :post do %>
+    <div class="field">
+      <label for="withdraw_reason">Reason (optional)</label>
+      <input type="text" id="withdraw_reason" name="reason">
+    </div>
+    <button type="submit" class="danger">Withdraw it</button>
+  <% end %>
+</dialog>
+
+<script src="/application-detail.js"></script>

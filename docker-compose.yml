@@ -1,0 +1,85 @@
+name: permit-desk
+
+x-service-urls: &service-urls
+  ZONING_URL: http://zoning:4100
+  REVIEW_URL: http://review:4200
+  SCHEDULING_URL: http://scheduling:4300
+  CASHIERING_URL: http://cashiering:4400
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: permitdesk
+      POSTGRES_PASSWORD: permitdesk
+      POSTGRES_DB: permitdesk_development
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U permitdesk -d permitdesk_development"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: ./permit_desk
+    ports:
+      - "3000:3000"
+    environment:
+      <<: *service-urls
+      DATABASE_URL: postgres://permitdesk:permitdesk@db:5432/permitdesk_development
+      REDIS_URL: redis://redis:6379/0
+      PORTAL_BASE_URL: http://localhost:3000
+      RUN_MIGRATIONS: "true"
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    build: ./permit_desk
+    command: ["bin/worker"]
+    environment:
+      <<: *service-urls
+      DATABASE_URL: postgres://permitdesk:permitdesk@db:5432/permitdesk_development
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      app: { condition: service_started }
+
+  zoning:
+    build: ./mocks
+    command: ["node", "zoning/index.js"]
+    environment:
+      PORT: 4100
+      PERMIT_DESK_URL: http://app:3000
+
+  review:
+    build: ./mocks
+    command: ["node", "review/index.js"]
+    environment:
+      PORT: 4200
+
+  scheduling:
+    build: ./mocks
+    command: ["node", "scheduling/index.js"]
+    environment:
+      PORT: 4300
+
+  cashiering:
+    build: ./mocks
+    command: ["node", "cashiering/index.js"]
+    environment:
+      PORT: 4400
+      PERMIT_DESK_URL: http://app:3000
+
+volumes:
+  pgdata:

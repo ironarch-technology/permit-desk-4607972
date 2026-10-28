@@ -1,0 +1,137 @@
+<% content_for :title, 'Start an application - Mountport Permit Portal' %>
+
+<h1>Start a building permit application</h1>
+<p class="muted">Four steps. Nothing is sent to the city until you submit it on the summary page.</p>
+
+<% if @errors.present? && @errors.any? %>
+  <div class="error-summary">
+    <h2>We could not accept that</h2>
+    <ul>
+      <% @errors.each_value do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= form_with url: portal_applications_path, method: :post, id: "intake", class: 'card form', data: { wizard: true } do %>
+  <input type="hidden" name="submission_key" value="<%= SecureRandom.uuid %>">
+
+  <ol class="steps" id="step-indicator">
+    <li data-step-label="1" class="current">Property</li>
+    <li data-step-label="2">Work</li>
+    <li data-step-label="3">Contact</li>
+    <li data-step-label="4">Summary</li>
+  </ol>
+
+  <fieldset class="step" data-step="1">
+    <legend>The property</legend>
+
+    <div class="field">
+      <label for="parcel_address">Parcel address</label>
+      <input type="text" id="parcel_address" name="parcel_address" list="parcel-options"
+             value="<%= params[:parcel_address] %>" autocomplete="street-address">
+      <% if @errors[:parcel_address] %>
+        <p class="field-error"><%= @errors[:parcel_address] %></p>
+      <% end %>
+      <datalist id="parcel-options">
+        <% Parcel.order(:address).limit(50).each do |parcel| %>
+          <option value="<%= parcel.address %>"></option>
+        <% end %>
+      </datalist>
+    </div>
+  </fieldset>
+
+  <fieldset class="step" data-step="2" hidden>
+    <legend>The work</legend>
+
+    <div class="field">
+      <label for="work_type">Type of work</label>
+      <select id="work_type" name="work_type">
+        <% PermitApplication::WORK_TYPES.each do |type| %>
+          <option value="<%= type %>" <%= 'selected' if params[:work_type] == type %>>
+            <%= type.humanize %>
+          </option>
+        <% end %>
+      </select>
+      <% if @errors[:work_type] %>
+        <p class="field-error"><%= @errors[:work_type] %></p>
+      <% end %>
+    </div>
+
+    <div class="field">
+      <label for="scope_narrative">Scope of work</label>
+      <textarea id="scope_narrative" name="scope_narrative" rows="5"><%= params[:scope_narrative] %></textarea>
+      <% if @errors[:scope_narrative] %>
+        <p class="field-error"><%= @errors[:scope_narrative] %></p>
+      <% end %>
+    </div>
+
+    <div class="field">
+      <label for="valuation">Estimated value of the work</label>
+      <input type="number" id="valuation" name="valuation" min="1" step="0.01"
+             value="<%= params[:valuation] %>">
+      <% if @errors[:valuation] %>
+        <p class="field-error"><%= @errors[:valuation] %></p>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="step" data-step="3" hidden>
+    <legend>Who to contact</legend>
+
+    <div class="field">
+      <label for="applicant_name">Name the permit is issued to</label>
+      <input type="text" id="applicant_name" name="applicant_name" autocomplete="name"
+             value="<%= params[:applicant_name] %>">
+      <% if @errors[:applicant_name] %>
+        <p class="field-error"><%= @errors[:applicant_name] %></p>
+      <% end %>
+    </div>
+
+    <div class="field">
+      <label for="applicant_email">Email address</label>
+      <input type="email" id="applicant_email" name="applicant_email" autocomplete="email"
+             value="<%= params[:applicant_email] %>">
+      <% if @errors[:applicant_email] %>
+        <p class="field-error"><%= @errors[:applicant_email] %></p>
+      <% end %>
+    </div>
+
+    <div class="field">
+      <label for="applicant_phone">Phone number</label>
+      <input type="tel" id="applicant_phone" name="applicant_phone" autocomplete="tel"
+             value="<%= params[:applicant_phone] %>">
+    </div>
+
+    <div class="field">
+      <label for="contractor_licence">Contractor licence number</label>
+      <input type="text" id="contractor_licence" name="contractor_licence"
+             value="<%= params[:contractor_licence] %>">
+      <p class="hint">Leave blank if you are the owner and doing the work yourself.</p>
+    </div>
+
+    <div class="field">
+      <label for="contractor_licence_expiry">Licence expiry date</label>
+      <input type="date" id="contractor_licence_expiry" name="contractor_licence_expiry"
+             value="<%= params[:contractor_licence_expiry] %>">
+      <% if @errors[:contractor_licence_expiry] %>
+        <p class="field-error"><%= @errors[:contractor_licence_expiry] %></p>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="step" data-step="4" hidden>
+    <legend>Summary</legend>
+    <p>Check the details, then create the draft. You can still edit it afterwards.</p>
+    <div id="summary-readout" class="summary"></div>
+  </fieldset>
+
+  <div class="wizard-controls">
+    <button type="button" class="secondary" data-wizard-back hidden>Back</button>
+    <button type="button" class="primary" data-wizard-next>Next</button>
+    <button type="submit" class="primary" data-wizard-submit hidden>Create draft</button>
+  </div>
+<% end %>
+
+<script src="/wizard.js"></script>

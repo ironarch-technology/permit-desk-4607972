@@ -1,0 +1,33 @@
+<% content_for :title, 'Counter - Mountport Permit Portal' %>
+
+<h1>Permit counter</h1>
+
+<div class="card">
+  <h2>Applications by state</h2>
+  <table class="listing">
+    <caption class="visually-hidden">Count of applications in each state</caption>
+    <thead>
+      <tr><th scope="col">State</th><th scope="col">Count</th></tr>
+    </thead>
+    <tbody>
+      <% PermitApplication::STATES.each do |state| %>
+        <tr>
+          <th scope="row"><%= render 'shared/status', state: state %></th>
+          <td><%= @counts.fetch(state, 0) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Most recent</h2>
+  <ul>
+    <% @recent.each do |application| %>
+      <li>
+        <%= application.reference %> &mdash; <%= application.parcel&.address %>
+        (<%= render 'shared/status', state: application.state %>)
+      </li>
+    <% end %>
+  </ul>
+</div>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= content_for(:title) || 'Mountport Permit Portal' %></title>
+    <%= csrf_meta_tags %>
+    <link rel="stylesheet" href="/portal.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <p class="wordmark">City of Mountport<span>Development Services</span></p>
+        <nav aria-label="Portal">
+          <ul>
+            <% if signed_in? %>
+              <li><%= link_to 'My applications', portal_applications_path %></li>
+              <% if current_account.staff? %>
+                <li><%= link_to 'Counter', staff_dashboard_path %></li>
+                <li><%= link_to 'Search', staff_search_path %></li>
+              <% end %>
+              <li>
+                <%= button_to 'Sign out', portal_sign_out_path, method: :delete, class: 'linkish' %>
+              </li>
+            <% end %>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="shell">
+      <% if flash[:alert] %>
+        <p class="flash flash-alert" role="alert"><%= flash[:alert] %></p>
+      <% end %>
+      <% if flash[:notice] %>
+        <p class="flash flash-notice" role="status"><%= flash[:notice] %></p>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <footer class="footer">
+      <p>Mountport Development Services, 1 Civic Plaza. Counter hours 8am to 4pm, Monday to Thursday.</p>
+    </footer>
+
+    <% if signed_in? && session_expires_at %>
+      <script>window.PORTAL_SESSION_ENDS = <%= session_expires_at.to_i %>;</script>
+      <script src="/session.js"></script>
+    <% end %>
+  </body>
+</html>

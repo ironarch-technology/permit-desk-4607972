@@ -1,0 +1,16 @@
+<%
+  labels = {
+    'draft' => 'Draft',
+    'submitted' => 'Submitted',
+    'zoning_check' => 'Zoning check',
+    'zoning_hold' => 'On hold at zoning',
+    'plan_review' => 'In plan review',
+    'corrections_required' => 'Corrections needed',
+    'fees_assessed' => 'Fees due',
+    'issued' => 'Issued',
+    'denied' => 'Denied',
+    'withdrawn' => 'Withdrawn',
+    'expired' => 'Expired'
+  }
+%>
+<span class="status status-<%= state.tr('_', '-') %>"><%= labels.fetch(state, state.humanize) %></span>

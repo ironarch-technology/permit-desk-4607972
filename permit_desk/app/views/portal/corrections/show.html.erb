@@ -1,0 +1,37 @@
+<% content_for :title, "Corrections for #{@application.reference} - Mountport Permit Portal" %>
+
+<h1>Corrections for <%= @application.reference %></h1>
+<p class="muted">The plan reviewer needs a response to each item before the application goes back in the queue.</p>
+
+<% if @missing.present? %>
+  <div class="error-summary">
+    <h2>Every item needs a response</h2>
+    <p><%= @missing.length %> of <%= @items.length %> items are still blank.</p>
+  </div>
+<% end %>
+
+<%= form_with url: portal_corrections_path(@application.reference), method: :post, class: 'form' do %>
+  <div class="correction-list">
+    <% @items.each_with_index do |item, index| %>
+      <div class="correction" data-correction="<%= item.id %>">
+        <div class="correction-head" data-toggle-correction>
+          <span class="correction-code"><%= item.code %></span>
+          <span class="correction-title"><%= truncate(item.narrative, length: 80) %></span>
+          <span class="correction-chevron" aria-hidden="true">&#9662;</span>
+        </div>
+        <div class="correction-body" <%= 'hidden' unless index.zero? %>>
+          <p><%= item.narrative %></p>
+          <p class="citation">Mountport Building Code <%= item.citation %></p>
+          <div class="field">
+            <label for="response_<%= item.id %>">Your response</label>
+            <textarea id="response_<%= item.id %>" name="responses[<%= item.id %>]" rows="4"><%= params.dig(:responses, item.id.to_s) %></textarea>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <button type="submit" class="primary">Send responses back to plan review</button>
+<% end %>
+
+<script src="/corrections.js"></script>

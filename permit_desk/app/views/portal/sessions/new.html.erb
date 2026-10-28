@@ -1,0 +1,23 @@
+<% content_for :title, 'Sign in - Mountport Permit Portal' %>
+
+<h1>Sign in to the permit portal</h1>
+
+<% if @error %>
+  <p class="flash flash-alert" role="alert"><%= @error %></p>
+<% end %>
+
+<%= form_with url: portal_sign_in_path, method: :post, class: 'card form' do %>
+  <div class="field">
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" autocomplete="email" required>
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" autocomplete="current-password" required>
+  </div>
+
+  <button type="submit" class="primary">Sign in</button>
+<% end %>
+
+<p class="muted">Counter staff sign in with the same form.</p>
